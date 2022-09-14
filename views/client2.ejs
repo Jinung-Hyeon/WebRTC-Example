@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Client2</title>
+    <script src="https://unpkg.com/peerjs@1.3.1/dist/peerjs.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+    <video id="local_video" autoplay></video>
+    <video id="remote_video" autoplay></video>
+</body>
+
+<script>
+    const socket = io('/');
+    
+    let localVideo = document.getElementById('local_video');
+    let remoteVideo = document.getElementById('remote_video');
+
+    const peer = new Peer('client2');
+
+    peer.on('open', function (id){
+        console.log("id : " + id);
+        socket.emit('join_room', 10, id);
+    })
+
+    navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true
+    }).then(function (stream) {
+        localVideo.srcObject = stream;
+        peer.on('call', function(call) {
+            console.log(call);
+        
+            localVideo.srcObject = stream;
+            call.answer(stream);
+            call.on('stream', function (stream) {
+                remoteVideo.srcObject = stream;
+            });
+        });
+    }).catch(function (error) {
+                console.log(error);
+            
+    });
+    
+
+    peer.on('connection', (conn) => {
+        console.log("incoming peer connection!");
+    })
+
+    socket.on('user-connected', userId => {
+        console.log('User connected: ' + userId);
+    });
+</script>
+
+</html>
